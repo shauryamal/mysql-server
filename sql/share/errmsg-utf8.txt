@@ -7777,3 +7777,11 @@ ER_CANT_OPEN_ERROR_LOG
 #
 #  End of 5.7 error messages.
 #
+
+
+
+start-error-number 9000
+
+ER_SP_BADCONTEXT
+        eng "Wrong context for function %s. %s"
+

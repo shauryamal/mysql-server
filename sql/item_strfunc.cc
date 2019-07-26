@@ -5340,3 +5340,84 @@ String *Item_func_gtid_subtract::val_str_ascii(String *str)
   null_value= true;
   DBUG_RETURN(NULL);
 }
+
+#include "sp_rcontext.h"
+#include "sp_head.h"
+
+bool Item_func_json_diff::itemize(Parse_context *pc, Item **res)
+{
+  THD *thd= pc->thd;
+  LEX *lex= thd->lex;
+  sp_head *sp= lex->sphead;
+
+  if (!sp || sp->m_type != SP_TYPE_TRIGGER || sp->m_trg_chistics.event != TRG_EVENT_UPDATE)
+  {
+    my_error(ER_SP_BADCONTEXT, MYF(0), func_name(), "This function is only supported inside an update trigger.");
+    return true;
+  }
+
+  if (skip_itemize(res))
+    return false;
+  if (super::itemize(pc, res))
+    return true;
+
+  pc->thd->lex->set_stmt_unsafe(LEX::BINLOG_STMT_UNSAFE_UDF);
+  pc->thd->lex->set_uncacheable(pc->select, UNCACHEABLE_SIDEEFFECT);
+
+  return false;
+}
+
+
+void Item_func_json_diff::fix_length_and_dec()
+{
+  collation.set(&my_charset_bin);
+  max_length= 1024;
+}
+
+
+String *Item_func_json_diff::val_str(String *in)
+{
+  DBUG_ASSERT(fixed == 1);
+
+  sp_rcontext *sp_runtime_ctx = thd->sp_runtime_ctx;
+  sp_head *sp = sp_runtime_ctx->sp;
+  Table_trigger_dispatcher *m_trg_list = sp->m_trg_list;
+  Field **old_field = m_trg_list->get_old_field();
+  Field **new_field = m_trg_list->get_new_field();
+
+  Json_object *json = new (std::nothrow) Json_object();
+
+  for( int i=0; old_field[i] != NULL; ++i)
+  {
+      if ( bitmap_is_set(old_field[i]->table->write_set, old_field[i]->field_index)
+	       && old_field[i]->cmp(new_field[i]->ptr)!=0
+         ) {
+          Json_array *fields = new (std::nothrow) Json_array();
+
+          String buf;
+          String *s = NULL;
+
+          s = old_field[i]->val_str(&buf);
+          fields->append_alias( new (std::nothrow) Json_string(s->c_ptr()) );
+          // DBUG_LOG("Old field: ", s->c_ptr());
+
+          s = new_field[i]->val_str(&buf);
+          fields->append_alias( new (std::nothrow) Json_string(s->c_ptr()) );
+          // DBUG_LOG("New field: ", s->c_ptr());
+
+          json->add_alias(old_field[i]->field_name, fields);
+      }
+  }
+
+  Json_wrapper m_value(json);
+
+  null_value = 0;
+
+  str_value.set_charset(&my_charset_bin);
+
+  str_value.length(0);
+
+  bool ret = m_value.to_string(&str_value, true, "");
+
+  return &str_value;
+}

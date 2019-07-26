@@ -20,6 +20,7 @@
 /* This file defines all string functions */
 #include "crypt_genhash_impl.h"       // CRYPT_MAX_PASSWORD_SIZE
 #include "item_func.h"                // Item_func
+#include "table_trigger_dispatcher.h" // Table_trigger_dispatcher
 
 class MY_LOCALE;
 
@@ -1329,6 +1330,39 @@ public:
   void fix_length_and_dec();
   const char *func_name() const{ return "gtid_subtract"; }
   String *val_str_ascii(String *);
+};
+
+
+class Item_func_json_diff : public Item_str_func
+{
+  typedef Item_str_func super;
+
+  /** limitation from the SSL library */
+  static const longlong MAX_RANDOM_BYTES_BUFFER;
+  THD *thd;
+  Item **ref;
+
+public:
+  Item_func_json_diff(const POS &pos) : super(pos)
+  {}
+
+  bool fix_fields(THD *thd, Item **ref)
+  {
+    this->fixed = 1;
+    this->thd = thd;
+    this->ref = ref;
+    return 0;
+  }
+
+  virtual bool itemize(Parse_context *pc, Item **res);
+  void fix_length_and_dec();
+  String *val_str(String *);
+
+  const char *func_name() const
+  {
+    return "json_diff";
+  }
+
 };
 
 #endif /* ITEM_STRFUNC_INCLUDED */
