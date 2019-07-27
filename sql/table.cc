@@ -6258,6 +6258,7 @@ void TABLE::mark_column_used(THD *thd, Field *field,
     break;
 
   case MARK_COLUMNS_WRITE:
+    bitmap_set_bit(read_set, field->field_index);
     if (bitmap_fast_test_and_set(write_set, field->field_index))
     {
       /*

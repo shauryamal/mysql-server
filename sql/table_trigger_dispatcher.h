@@ -47,6 +47,17 @@ class Table_trigger_dispatcher : public Sql_alloc,
                                  public Table_trigger_field_support
 {
 public:
+  Field **get_old_field()
+  {
+    return m_old_field;
+  }
+
+  Field **get_new_field()
+  {
+    return m_new_field;
+  }
+
+public:
   static Table_trigger_dispatcher *create(TABLE *subject_table);
 
   bool check_n_load(THD *thd, bool names_only);
