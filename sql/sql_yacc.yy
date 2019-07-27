@@ -9614,9 +9614,9 @@ function_call_keyword:
           {
             $$= NEW_PTN Item_func_current_user(@$);
           }
-        | JSON_DIFF optional_braces
+        | JSON_DIFF '(' using_list ')'
           {
-            $$= NEW_PTN Item_func_json_diff(@$);
+            $$= NEW_PTN Item_func_json_diff(@$, $3);
           }
         | DATE_SYM '(' expr ')'
           {

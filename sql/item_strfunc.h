@@ -22,6 +22,11 @@
 #include "item_func.h"                // Item_func
 #include "table_trigger_dispatcher.h" // Table_trigger_dispatcher
 
+#include "sql_base.h"                 // ***** //
+#include "sp_rcontext.h"              // ***** //
+#include "sp_head.h"                  // ***** //
+
+
 class MY_LOCALE;
 
 class Item_str_func :public Item_func
@@ -557,6 +562,7 @@ public:
 };
 
 #include "sql_crypt.h"
+#include "parse_tree_helpers.h"
 
 
 class Item_func_encode :public Item_str_func
@@ -1339,16 +1345,49 @@ class Item_func_json_diff : public Item_str_func
 
   THD *thd;
   Item **ref;
+  List<String> *args_list;
+  MY_BITMAP *filter_map;
 
 public:
-  Item_func_json_diff(const POS &pos) : super(pos)
-  {}
+  Item_func_json_diff(const POS &pos, List<String> *item_list) : super(pos)
+  {
+    this->filter_map = NULL;
+    this->args_list = item_list;
+  }
 
   bool fix_fields(THD *thd, Item **ref)
   {
-    this->fixed = 1;
     this->thd = thd;
     this->ref = ref;
+
+    if (this->filter_map == NULL)
+    {
+      sp_rcontext *sp_runtime_ctx = thd->sp_runtime_ctx;
+      sp_head *sp = sp_runtime_ctx->sp;
+      Table_trigger_dispatcher *m_trg_list = sp->m_trg_list;
+      Field **old_field = m_trg_list->get_old_field();
+
+      this->filter_map = new MY_BITMAP();
+      bitmap_init(this->filter_map, NULL, old_field[0]->table->s->fields, false);
+
+      List_iterator<String> li(*(this->args_list));
+      while(String *s = li++)
+      {
+        uint field_idx = 0;
+
+        if (find_field_in_table(thd, old_field[0]->table, s->c_ptr(), strlen(s->c_ptr()), 0, &field_idx))
+        {
+          bitmap_set_bit(this->filter_map, field_idx);   // found
+        }
+        //else
+        //{
+        //  ;   // not-found
+        //}
+      }
+    }
+
+    this->fixed = 1;
+
     return 0;
   }
 
