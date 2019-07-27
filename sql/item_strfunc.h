@@ -1347,12 +1347,14 @@ class Item_func_json_diff : public Item_str_func
   Item **ref;
   List<String> *args_list;
   MY_BITMAP *filter_map;
+  bool include;         // whether to include fields provided in argument list? the default is to exclude
 
 public:
-  Item_func_json_diff(const POS &pos, List<String> *item_list) : super(pos)
+  Item_func_json_diff(const POS &pos, List<String> *item_list, bool include=false) : super(pos)
   {
     this->filter_map = NULL;
     this->args_list = item_list;
+    this->include = include;
   }
 
   bool fix_fields(THD *thd, Item **ref)
@@ -1384,6 +1386,8 @@ public:
         //  ;   // not-found
         //}
       }
+
+      if (this->include) bitmap_invert(this->filter_map);
     }
 
     this->fixed = 1;
