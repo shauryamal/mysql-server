@@ -1135,6 +1135,8 @@ bool my_yyoverflow(short **a, YYSTYPE **b, YYLTYPE **c, ulong *yystacksize);
 %token  JSON_ARRAYAGG                 /* SQL-2015-R */
 
 %token  JSON_DIFF                     /* CUSTOM */
+%token  JSON_DIFF_EXCLUDE             /* CUSTOM */
+%token  JSON_DIFF_INCLUDE             /* CUSTOM */
 
 /*
   Resolve column attribute ambiguity -- force precedence of "UNIQUE KEY" against
@@ -9617,6 +9619,14 @@ function_call_keyword:
         | JSON_DIFF '(' using_list ')'
           {
             $$= NEW_PTN Item_func_json_diff(@$, $3);
+          }
+        | JSON_DIFF_EXCLUDE '(' using_list ')'
+          {
+            $$= NEW_PTN Item_func_json_diff(@$, $3);
+          }
+        | JSON_DIFF_INCLUDE '(' using_list ')'
+          {
+            $$= NEW_PTN Item_func_json_diff(@$, $3, true);
           }
         | DATE_SYM '(' expr ')'
           {

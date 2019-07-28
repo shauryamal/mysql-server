@@ -682,6 +682,8 @@ static const SYMBOL symbols[] = {
   { SYM("ZEROFILL",                 ZEROFILL)},
   { SYM("||",                       OR_OR_SYM)},
   { SYM("JSON_DIFF",                JSON_DIFF)},
+  { SYM("JSON_DIFF_EXCLUDE",        JSON_DIFF_EXCLUDE)},
+  { SYM("JSON_DIFF_INCLUDE",        JSON_DIFF_INCLUDE)},
 
   /*
     Place keywords that accept optimizer hints below the commentary.
