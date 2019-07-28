@@ -5341,6 +5341,7 @@ String *Item_func_gtid_subtract::val_str_ascii(String *str)
   DBUG_RETURN(NULL);
 }
 
+
 #include "sp_rcontext.h"
 #include "sp_head.h"
 
@@ -5389,9 +5390,12 @@ String *Item_func_json_diff::val_str(String *in)
 
   for( int i=0; old_field[i] != NULL; ++i)
   {
-      if ( bitmap_is_set(old_field[i]->table->write_set, old_field[i]->field_index)
-	       && old_field[i]->cmp(new_field[i]->ptr)!=0
-         ) {
+      if (
+            !bitmap_is_set(this->filter_map, old_field[i]->field_index) &&
+            bitmap_is_set(old_field[i]->table->write_set, old_field[i]->field_index) &&
+            old_field[i]->cmp(new_field[i]->ptr)!=0
+         )
+      {
           Json_array *fields = new (std::nothrow) Json_array();
 
           String buf;
@@ -5418,6 +5422,9 @@ String *Item_func_json_diff::val_str(String *in)
   str_value.length(0);
 
   bool ret = m_value.to_string(&str_value, true, "");
+
+  // DBUG_LOG("JSON diff: ", str_value.c_ptr());
+  // DBUG_LOG("Incoming value: ", in->c_ptr());
 
   return &str_value;
 }
