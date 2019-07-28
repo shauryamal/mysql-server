@@ -435,16 +435,17 @@ bool Sql_cmd_delete::mysql_delete(THD *thd, ha_rows limit)
 
     THD_STAGE_INFO(thd, stage_updating);
 
-    if (table->triggers &&
-        table->triggers->has_triggers(TRG_EVENT_DELETE,
-                                      TRG_ACTION_AFTER))
+    //if (table->triggers &&
+    //    table->triggers->has_triggers(TRG_EVENT_DELETE,
+    //                                  TRG_ACTION_AFTER))
+    if (table->prepare_triggers_for_delete_stmt_or_event())
     {
-      /*
-        The table has AFTER DELETE triggers that might access to subject table
-        and therefore might need delete to be done immediately. So we turn-off
-        the batching.
-      */
-      (void) table->file->extra(HA_EXTRA_DELETE_CANNOT_BATCH);
+      ///*
+      //  The table has AFTER DELETE triggers that might access to subject table
+      //  and therefore might need delete to be done immediately. So we turn-off
+      //  the batching.
+      //*/
+      //(void) table->file->extra(HA_EXTRA_DELETE_CANNOT_BATCH);
       will_batch= FALSE;
     }
     else
@@ -915,19 +916,23 @@ bool Query_result_delete::initialize_tables(JOIN *join)
       transactional_table_map|= map;
     else
       non_transactional_table_map|= map;
-    if (table->triggers &&
-        table->triggers->has_triggers(TRG_EVENT_DELETE,
-                                      TRG_ACTION_AFTER))
-    {
-      /*
-        The table has AFTER DELETE triggers that might access the subject
-        table and therefore might need delete to be done immediately.
-        So we turn-off the batching.
-      */
-      (void) table->file->extra(HA_EXTRA_DELETE_CANNOT_BATCH);
-    }
+
+    //if (table->triggers &&
+    //    table->triggers->has_triggers(TRG_EVENT_DELETE,
+    //                                  TRG_ACTION_AFTER))
+    //{
+    //  /*
+    //    The table has AFTER DELETE triggers that might access the subject
+    //    table and therefore might need delete to be done immediately.
+    //    So we turn-off the batching.
+    //  */
+    //  (void) table->file->extra(HA_EXTRA_DELETE_CANNOT_BATCH);
+    //}
     if (thd->lex->is_ignore())
       table->file->extra(HA_EXTRA_IGNORE_DUP_KEY);
+
+    table->prepare_triggers_for_delete_stmt_or_event();
+
     table->prepare_for_position();
     table->mark_columns_needed_for_delete();
     if (thd->is_error())

@@ -387,7 +387,9 @@ int mysql_load(THD *thd,sql_exchange *ex,TABLE_LIST *table_list,
   if (info.add_function_default_columns(table, table->write_set))
     DBUG_RETURN(TRUE);
 
-  prepare_triggers_for_insert_stmt(table);
+  //prepare_triggers_for_insert_stmt(table);
+  table->prepare_triggers_for_insert_stmt_or_event();
+  table->mark_columns_needed_for_insert();
 
   uint tot_length=0;
   bool use_blobs= 0, use_vars= 0;
