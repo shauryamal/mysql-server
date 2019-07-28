@@ -304,33 +304,33 @@ bool validate_default_values_of_unset_fields(THD *thd, TABLE *table)
     cannot be done if there are BEFORE UPDATE/DELETE triggers.
 */
 
-void prepare_triggers_for_insert_stmt(TABLE *table)
-{
-  if (table->triggers)
-  {
-    if (table->triggers->has_triggers(TRG_EVENT_DELETE,
-                                      TRG_ACTION_AFTER))
-    {
-      /*
-        The table has AFTER DELETE triggers that might access to 
-        subject table and therefore might need delete to be done 
-        immediately. So we turn-off the batching.
-      */ 
-      (void) table->file->extra(HA_EXTRA_DELETE_CANNOT_BATCH);
-    }
-    if (table->triggers->has_triggers(TRG_EVENT_UPDATE,
-                                      TRG_ACTION_AFTER))
-    {
-      /*
-        The table has AFTER UPDATE triggers that might access to subject 
-        table and therefore might need update to be done immediately. 
-        So we turn-off the batching.
-      */ 
-      (void) table->file->extra(HA_EXTRA_UPDATE_CANNOT_BATCH);
-    }
-  }
-  table->mark_columns_needed_for_insert();
-}
+//void prepare_triggers_for_insert_stmt(TABLE *table)
+//{
+//  if (table->triggers)
+//  {
+//    if (table->triggers->has_triggers(TRG_EVENT_DELETE,
+//                                      TRG_ACTION_AFTER))
+//    {
+//      /*
+//        The table has AFTER DELETE triggers that might access to 
+//        subject table and therefore might need delete to be done 
+//        immediately. So we turn-off the batching.
+//      */ 
+//      (void) table->file->extra(HA_EXTRA_DELETE_CANNOT_BATCH);
+//    }
+//    if (table->triggers->has_triggers(TRG_EVENT_UPDATE,
+//                                      TRG_ACTION_AFTER))
+//    {
+//      /*
+//        The table has AFTER UPDATE triggers that might access to subject 
+//        table and therefore might need update to be done immediately. 
+//        So we turn-off the batching.
+//      */ 
+//      (void) table->file->extra(HA_EXTRA_UPDATE_CANNOT_BATCH);
+//    }
+//  }
+//  table->mark_columns_needed_for_insert();
+//}
 
 /**
   Setup data for field BLOB/GEOMETRY field types for execution of
@@ -680,7 +680,9 @@ bool Sql_cmd_insert::mysql_insert(THD *thd,TABLE_LIST *table_list)
   if (thd->locked_tables_mode <= LTM_LOCK_TABLES)
     insert_table->file->ha_start_bulk_insert(insert_many_values.elements);
 
-  prepare_triggers_for_insert_stmt(insert_table);
+  //prepare_triggers_for_insert_stmt(insert_table);
+  insert_table->prepare_triggers_for_insert_stmt_or_event();
+  insert_table->mark_columns_needed_for_insert();
 
   for (Field** next_field= insert_table->field; *next_field; ++next_field)
   {
@@ -2177,7 +2179,9 @@ int Query_result_insert::prepare(List<Item> &values, SELECT_LEX_UNIT *u)
 
   if (!res)
   {
-     prepare_triggers_for_insert_stmt(table);
+     //prepare_triggers_for_insert_stmt(table);
+     table->prepare_triggers_for_insert_stmt_or_event();
+     table->mark_columns_needed_for_insert();
   }
 
   for (Field** next_field= table->field; *next_field; ++next_field)
