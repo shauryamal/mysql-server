@@ -1276,7 +1276,7 @@ bool my_yyoverflow(short **a, YYSTYPE **b, YYLTYPE **c, ulong *yystacksize);
         btree_or_rtree
 
 %type <string_list>
-        using_list opt_use_partition use_partition
+        using_list opt_use_partition use_partition opt_using_list
 
 %type <key_part>
         key_part
@@ -9616,17 +9616,17 @@ function_call_keyword:
           {
             $$= NEW_PTN Item_func_current_user(@$);
           }
-        | JSON_DIFF '(' using_list ')'
+        | JSON_DIFF opt_using_list
           {
-            $$= NEW_PTN Item_func_json_diff(@$, $3);
+            $$= NEW_PTN Item_func_json_diff(@$, $2);
           }
-        | JSON_DIFF_EXCLUDE '(' using_list ')'
+        | JSON_DIFF_EXCLUDE opt_using_list
           {
-            $$= NEW_PTN Item_func_json_diff(@$, $3);
+            $$= NEW_PTN Item_func_json_diff(@$, $2);
           }
-        | JSON_DIFF_INCLUDE '(' using_list ')'
+        | JSON_DIFF_INCLUDE opt_using_list
           {
-            $$= NEW_PTN Item_func_json_diff(@$, $3, true);
+            $$= NEW_PTN Item_func_json_diff(@$, $2, true);
           }
         | DATE_SYM '(' expr ')'
           {
@@ -10733,6 +10733,11 @@ using_list:
             $1->push_back(s);
             $$= $1;
           }
+        ;
+
+opt_using_list:
+          optional_braces { $$ = new List<String>; }
+        | '(' using_list ')' { $$ = $2; }
         ;
 
 interval:
